@@ -25,8 +25,8 @@ import static java.awt.AWTEvent.*;
  */
 public class WorkStatisticComponent implements ApplicationComponent {
 
-  private static final int SESSION_EXPIRED_TIME = 5 * 1000;
-  private static final int MAX_SESSION_TIME = 15 * 1000;
+  private static final int SESSION_EXPIRED_TIME = 10 * 1000;
+  private static final int MAX_SESSION_TIME = 30 * 1000;
 
   private static final DateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
 
@@ -105,7 +105,7 @@ public class WorkStatisticComponent implements ApplicationComponent {
 
     write(FORMAT.format(new Date()) + " Startup");
 
-    timer = new Timer(2000, new ActionListener() {
+    timer = new Timer(1000, new ActionListener() {
       public void actionPerformed(ActionEvent e) {
         if (isClosed) return;
 
