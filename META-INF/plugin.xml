@@ -1,5 +1,5 @@
 <idea-plugin version="2">
-  <name>Plugin name here</name>
+  <name>WorkStatistic</name>
   <description>short description of the plugin</description>
   <version>1.0</version>
   <vendor>YourCompany</vendor>
