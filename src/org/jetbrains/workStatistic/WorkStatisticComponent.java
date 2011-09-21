@@ -80,11 +80,6 @@ public class WorkStatisticComponent implements ApplicationComponent {
   }
 
   private void write(String s) {
-    if (true) {
-      System.out.println(s);
-      return;
-    }
-
     try {
       PrintStream out = new PrintStream(new FileOutputStream(file, true));
 
