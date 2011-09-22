@@ -117,7 +117,7 @@ public class WorkStatisticComponent implements ApplicationComponent {
     }
 
     try {
-      file = File.createTempFile("ws-" + FILE_NAME_DATE_FORMAT.format(new Date()) + (isDebug() ? "-debug" : "") , ".log", logPathFile);
+      file = File.createTempFile("ws-" + FILE_NAME_DATE_FORMAT.format(new Date()) + (isDebug() ? "-debug-" : "-") , ".log", logPathFile);
     } catch (IOException e) {
       throw new RuntimeException("Failed to create log file: " + logPath);
     }
