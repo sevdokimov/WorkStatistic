@@ -1,6 +1,8 @@
 package org.jetbrains.workStatistic;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.util.PathUtil;
 import com.intellij.util.SystemProperties;
 import org.jetbrains.annotations.NotNull;
 
@@ -25,10 +27,11 @@ import static java.awt.AWTEvent.*;
  */
 public class WorkStatisticComponent implements ApplicationComponent {
 
-  private static final int SESSION_EXPIRED_TIME = 5 * 1000;
-  private static final int MAX_SESSION_TIME = 15 * 1000;
+  private static final int SESSION_EXPIRED_TIME = 10 * 1000;
+  private static final int MAX_SESSION_TIME = 30 * 1000;
 
-  private static final DateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss");
+  private static final DateFormat FORMAT = new SimpleDateFormat("yyyy-MM-dd HH.mm.ss(SSS)");
+  private static final DateFormat FILE_NAME_DATE_FORMAT = new SimpleDateFormat("yyyy-MM-dd HH.mm");
 
   private File file;
 
@@ -76,7 +79,7 @@ public class WorkStatisticComponent implements ApplicationComponent {
   }
 
   private void writeSessionData() {
-    write(FORMAT.format(new Date(sessionStartTime)) + " work " + ((lastActivity - sessionStartTime) / 1000) + "." + (((lastActivity - sessionStartTime) / 10) % 100));
+    write(FORMAT.format(new Date(sessionStartTime)) + " work " + ((lastActivity - sessionStartTime) / 1000) + "." + ((lastActivity - sessionStartTime) % 1000));
   }
 
   private void write(String s) {
@@ -95,13 +98,29 @@ public class WorkStatisticComponent implements ApplicationComponent {
     }
   }
 
+  private static boolean isDebug() {
+    String path = PathUtil.getJarPathForClass(ApplicationManager.class);
+    return !path.contains(".jar");
+  }
+
   public void initComponent() {
-    String log = System.getenv("WORK_STATISTIC_LOG");
-    if (log == null) {
-      log = SystemProperties.getUserHome() + "/workStatistic.log";
+    String logPath = System.getenv("WORK_STATISTIC_HOME");
+    if (logPath == null) {
+      logPath = SystemProperties.getUserHome() + "/workStatistic";
+    }
+    
+    File logPathFile = new File(logPath);
+    if (!logPathFile.exists()) {
+      if (!logPathFile.mkdirs()) {
+        throw new RuntimeException("Failed to create dir: " + logPath);
+      }
     }
 
-    file = new File(log);
+    try {
+      file = File.createTempFile("ws-" + FILE_NAME_DATE_FORMAT.format(new Date()) + (isDebug() ? "-debug" : "") , ".log", logPathFile);
+    } catch (IOException e) {
+      throw new RuntimeException("Failed to create log file: " + logPath);
+    }
 
     write(FORMAT.format(new Date()) + " Startup");
 
