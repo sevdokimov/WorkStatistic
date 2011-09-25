@@ -4,10 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Scanner;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -15,8 +12,6 @@ import java.util.regex.Pattern;
  * @author Sergey Evdokimov
  */
 public class Main {
-
-  private static final int SESSION_EXPIRED_TIME = 10 * 1000;
 
   private final List<Period> data = new ArrayList<Period>();
 
@@ -50,13 +45,14 @@ public class Main {
       }
     }
 
-    PeriodUtils.sortAndRemoveDuplicates(data, SESSION_EXPIRED_TIME);
+    PeriodUtils.sortAndRemoveDuplicates(data, 2*60000);
   }
 
 
   private void printLines() {
     for (Period period : data) {
       System.out.println(period);
+      System.out.println(Period.FORMAT.format(new Date(period.getEnd())));
     }
   }
 
@@ -79,6 +75,10 @@ public class Main {
     main.load(dir);
 
     PeriodUtils.printStatistic(main.data, new PerHourClassifier());
+    System.out.println();
+    System.out.println("Total: " + PeriodUtils.toTime(PeriodUtils.sum(main.data)));
+    System.out.println();
+    main.printLines();
   }
 
 }
