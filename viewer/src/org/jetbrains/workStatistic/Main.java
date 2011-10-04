@@ -45,19 +45,19 @@ public class Main {
       }
     }
 
-    PeriodUtils.sortAndRemoveDuplicates(data, 2*60000);
+    PeriodUtils.sortAndRemoveDuplicates(data, 60000);
   }
 
 
   private void printLines() {
-    for (Period period : data) {
-      System.out.println(period);
-      System.out.println(Period.FORMAT.format(new Date(period.getEnd())));
+    for (int i = 0; i < data.size(); i++) {
+      Period period = data.get(i);
+      
+      System.out.println(Period.FORMAT.format(new Date(period.getStart())) + " + " + PeriodUtils.toTime(period.getDuration()) );
+      if (i + 1 < data.size()) {
+        System.out.println(Period.FORMAT.format(new Date(period.getEnd())) + " - " + PeriodUtils.toTime(data.get(i + 1).getStart() - period.getEnd()));
+      }
     }
-  }
-
-  private void printTotalTimePerDay() {
-
   }
 
   public static void main(String[] args) throws IOException, ParseException {
@@ -74,7 +74,7 @@ public class Main {
     Main main = new Main();
     main.load(dir);
 
-    PeriodUtils.printStatistic(main.data, new PerHourClassifier());
+    PeriodUtils.printStatistic(main.data, new PerDayClassifier());
     System.out.println();
     System.out.println("Total: " + PeriodUtils.toTime(PeriodUtils.sum(main.data)));
     System.out.println();
