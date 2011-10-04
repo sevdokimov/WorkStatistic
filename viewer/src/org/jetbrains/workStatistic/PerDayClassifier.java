@@ -7,6 +7,8 @@ import java.util.Date;
 
 public class PerDayClassifier extends Classifier<String> {
 
+  public static final PerDayClassifier INSTANCE = new PerDayClassifier();
+
   private static final DateFormat FORMAT = new SimpleDateFormat("yyyy.MM.dd (EEE)");
 
   @Override

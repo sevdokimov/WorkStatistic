@@ -37,6 +37,24 @@ public class PeriodUtils {
     }
   }
 
+  public static Map<String, List<Period>> splitByDay(List<Period> data) {
+    Map<String, List<Period>> res = new LinkedHashMap<String, List<Period>>();
+
+    for (Period p : data) {
+      Classifier.Result<String> result = PerDayClassifier.INSTANCE.process(p.getStart());
+
+      List<Period> list = res.get(result.id);
+      if (list == null) {
+        list = new ArrayList<Period>();
+        res.put(result.id, list);
+      }
+      
+      list.add(p);
+    }
+
+    return res;
+  }
+  
   public static <T extends Comparable<T>> Map<T, Long> sumByClassifier(List<Period> data, Classifier<T> classifier) {
     Map<T, Long> res = new HashMap<T, Long>();
 

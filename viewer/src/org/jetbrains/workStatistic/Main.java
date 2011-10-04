@@ -2,8 +2,10 @@ package org.jetbrains.workStatistic;
 
 import java.io.File;
 import java.io.IOException;
+import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +18,9 @@ public class Main {
   private final List<Period> data = new ArrayList<Period>();
 
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:Startup|Shutdown|(?:work (\\d+\\.\\d+)))");
+
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
+  private static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH-mm-ss");
 
   private void load(File dir) throws IOException, ParseException {
     for (File file : dir.listFiles()) {
@@ -60,6 +65,27 @@ public class Main {
     }
   }
 
+  private void printStartEnd() {
+    Map<String, List<Period>> map = PeriodUtils.splitByDay(data);
+
+    for (Map.Entry<String, List<Period>> entry : map.entrySet()) {
+      List<Period> list = entry.getValue();
+
+      Date startDate = new Date(list.get(0).getStart());
+      
+      String date = DATE_FORMAT.format(startDate);
+      System.out.print(date + "   ");
+
+      System.out.print(TIME_FORMAT.format(startDate));
+      
+      Date endDate = new Date(list.get(list.size() - 1).getEnd());
+
+      System.out.print(" - ");
+      System.out.println(TIME_FORMAT.format(endDate));
+    }
+    
+  }
+  
   public static void main(String[] args) throws IOException, ParseException {
     String logPath = System.getenv("WORK_STATISTIC_HOME");
     if (logPath == null) {
@@ -78,7 +104,7 @@ public class Main {
     System.out.println();
     System.out.println("Total: " + PeriodUtils.toTime(PeriodUtils.sum(main.data)));
     System.out.println();
-    main.printLines();
+    main.printStartEnd();
   }
 
 }
