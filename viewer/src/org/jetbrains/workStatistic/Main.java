@@ -103,6 +103,7 @@ public class Main {
     PeriodUtils.printStatistic(main.data, new PerDayClassifier());
     System.out.println();
     System.out.println("Total: " + PeriodUtils.toTime(PeriodUtils.sum(main.data)));
+    System.out.println("Agv: " + PeriodUtils.toTime(PeriodUtils.getAgv(main.data, new PerDayClassifier())));
     System.out.println();
     main.printStartEnd();
   }

@@ -86,6 +86,11 @@ public class PeriodUtils {
     return res;
   }
 
+  public static <T extends Comparable<T>> long getAgv(List<Period> data, Classifier<T> classifier) {
+    Map<T, Long> map = sumByClassifier(data, classifier);
+    return sum(data) / map.size();
+  }
+
   public static <T extends Comparable<T>> void printStatistic(List<Period> data, Classifier<T> classifier) {
     Map<T, Long> map = sumByClassifier(data, classifier);
 
