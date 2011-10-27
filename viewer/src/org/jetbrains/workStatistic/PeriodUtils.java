@@ -149,4 +149,9 @@ public class PeriodUtils {
     return sb.toString();
   }
 
+  public static int getWeakNumber(long date) {
+    Calendar c = GregorianCalendar.getInstance();
+    c.setTime(new Date(date));
+    return c.get(Calendar.WEEK_OF_YEAR);
+  }
 }

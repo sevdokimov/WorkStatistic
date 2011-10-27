@@ -10,14 +10,18 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static org.jetbrains.workStatistic.PeriodUtils.*;
+
 /**
  * @author Sergey Evdokimov
  */
 public class Main {
 
   private final List<Period> data = new ArrayList<Period>();
+  
+  private final List<Period> ideaOpens = new ArrayList<Period>();
 
-  private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:Startup|Shutdown|(?:work (\\d+\\.\\d+)))");
+  private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
   private static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH-mm-ss");
@@ -26,6 +30,8 @@ public class Main {
     for (File file : dir.listFiles()) {
       if (!file.isFile() || !file.getName().endsWith(".log")) continue;
 
+      Date openTime = null;
+      
       Scanner sc = new Scanner(file);
       try {
         while (sc.hasNextLine()) {
@@ -36,13 +42,35 @@ public class Main {
             throw new RuntimeException(s);
           }
 
-          String sDuration = matcher.group(2);
-          if (sDuration == null) continue;
+          String sDuration = matcher.group(4);
+          if (sDuration != null) {
+            assert openTime != null;
+            
+            NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
 
-          NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
-
-          Period p = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
-          data.add(p);
+            Period p = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
+            data.add(p);
+          }
+          else if (matcher.group(2) != null) {
+            assert openTime == null;
+            openTime = Period.FORMAT.parse(matcher.group(1));
+          }
+          else {
+            assert matcher.group(3) != null;
+            assert openTime != null;
+            
+            long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
+            ideaOpens.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+            openTime = null;
+          }
+        }
+        if (openTime != null) {
+          if (data.size() > 0) {
+            long closeTime = data.get(data.size() - 1).getEnd();
+            if (closeTime > openTime.getTime()) {
+              ideaOpens.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+            }
+          }
         }
       }
       finally {
@@ -50,7 +78,8 @@ public class Main {
       }
     }
 
-    PeriodUtils.sortAndRemoveDuplicates(data, 60000);
+    sortAndRemoveDuplicates(data, 60000);
+    sortAndRemoveDuplicates(ideaOpens, 1);
   }
 
 
@@ -58,32 +87,43 @@ public class Main {
     for (int i = 0; i < data.size(); i++) {
       Period period = data.get(i);
       
-      System.out.println(Period.FORMAT.format(new Date(period.getStart())) + " + " + PeriodUtils.toTime(period.getDuration()) );
+      System.out.println(Period.FORMAT.format(new Date(period.getStart())) + " + " + toTime(period.getDuration()) );
       if (i + 1 < data.size()) {
-        System.out.println(Period.FORMAT.format(new Date(period.getEnd())) + " - " + PeriodUtils.toTime(data.get(i + 1).getStart() - period.getEnd()));
+        System.out.println(Period.FORMAT.format(new Date(period.getEnd())) + " - " + toTime(data.get(i + 1).getStart() - period.getEnd()));
       }
     }
   }
 
-  private void printStartEnd() {
-    Map<String, List<Period>> map = PeriodUtils.splitByDay(data);
-
-    for (Map.Entry<String, List<Period>> entry : map.entrySet()) {
-      List<Period> list = entry.getValue();
-
-      Date startDate = new Date(list.get(0).getStart());
-      
-      String date = DATE_FORMAT.format(startDate);
-      System.out.print(date + "   ");
-
-      System.out.print(TIME_FORMAT.format(startDate));
-      
-      Date endDate = new Date(list.get(list.size() - 1).getEnd());
-
-      System.out.print(" - ");
-      System.out.println(TIME_FORMAT.format(endDate));
-    }
+  private void printStat() {
+    Map<String, List<Period>> dataMap = splitByDay(data);
+    Map<String, List<Period>> openMap = splitByDay(ideaOpens);
     
+    assert dataMap.keySet().equals(openMap.keySet());
+
+    int weakNumber = -1;
+
+    for (String day : dataMap.keySet()) {
+      long work = sum(dataMap.get(day));
+      
+      List<Period> openList = openMap.get(day);
+      
+      long open = sum(openList);
+
+      int cw = getWeakNumber(openList.get(0).getStart());
+      if (weakNumber != -1 && cw != weakNumber) {
+        System.out.println();
+      }
+      weakNumber = cw;
+
+      System.out.append(day).append("   ")
+          .append(toTime(work))
+          .append(", ")
+          .append(toTime(open));
+
+      System.out.printf(", %.2f, ", (double) work / open);
+
+      System.out.printf(" (%s - %s)\n", TIME_FORMAT.format(openList.get(0).getStart()), TIME_FORMAT.format(openList.get(openList.size() - 1).getEnd()));
+    }
   }
   
   public static void main(String[] args) throws IOException, ParseException {
@@ -100,12 +140,9 @@ public class Main {
     Main main = new Main();
     main.load(dir);
 
-    PeriodUtils.printStatistic(main.data, new PerDayClassifier());
-    System.out.println();
-    System.out.println("Total: " + PeriodUtils.toTime(PeriodUtils.sum(main.data)));
-    System.out.println("Agv: " + PeriodUtils.toTime(PeriodUtils.getAgv(main.data, new PerDayClassifier())));
-    System.out.println();
-    main.printStartEnd();
+    printStatistic(main.data, new PerDayClassifier());
+
+    main.printStat();
   }
 
 }
