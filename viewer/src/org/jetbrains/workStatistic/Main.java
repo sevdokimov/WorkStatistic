@@ -113,7 +113,7 @@ public class Main {
     main.load(dir);
     main.printStat();
     
-    printStatistic(main.workPeriods, new PerWeakDayGrooper());
+//    printStatistic(new PerWeakDayGrooper(), main.workPeriods, main.openedIdeaPeriods);
   }
 
 }

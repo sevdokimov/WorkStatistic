@@ -42,18 +42,18 @@ public class PeriodUtils {
     }
   }
 
-  public static Map<String, List<Period>> splitByDay(List<Period> data) {
-    Map<String, List<Period>> res = new LinkedHashMap<String, List<Period>>();
+  public static <T extends Comparable<T>> Map<T, List<Period>> splitByGrooper(Grooper<T> g, List<Period> data) {
+    Map<T, List<Period>> res = new TreeMap<T, List<Period>>();
 
     for (Period p : data) {
-      Grooper.Result<String> result = PerDayGrooper.INSTANCE.process(p.getStart());
+      Grooper.Result<T> result = g.process(p.getStart());
 
       List<Period> list = res.get(result.id);
       if (list == null) {
         list = new ArrayList<Period>();
         res.put(result.id, list);
       }
-      
+
       list.add(p);
     }
 
@@ -160,9 +160,22 @@ public class PeriodUtils {
     return c.get(Calendar.WEEK_OF_YEAR);
   }
 
+  public static <T extends Comparable<T>> void printStatistic(Grooper<T> grooper, List<Period> workPeriods, List<Period> openedIdeaPeriods) {
+    Map<T, List<Period>> workMap = splitByGrooper(grooper, workPeriods);
+    Map<T, List<Period>> openMap = splitByGrooper(grooper, openedIdeaPeriods);
+
+    assert workMap.keySet().equals(openMap.keySet());
+
+    for (T key : workMap.keySet()) {
+      System.out.println(key + ":");
+      printStatistic(workMap.get(key), openMap.get(key));
+      System.out.println();
+    }
+  }
+
   public static void printStatistic(List<Period> workPeriods, List<Period> openedIdeaPeriods) {
-    Map<String, List<Period>> workMap = splitByDay(workPeriods);
-    Map<String, List<Period>> openMap = splitByDay(openedIdeaPeriods);
+    Map<String, List<Period>> workMap = splitByGrooper(PerDayGrooper.INSTANCE, workPeriods);
+    Map<String, List<Period>> openMap = splitByGrooper(PerDayGrooper.INSTANCE, openedIdeaPeriods);
 
     assert workMap.keySet().equals(openMap.keySet());
 
