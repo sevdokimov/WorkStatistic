@@ -2,7 +2,7 @@ package org.jetbrains.workStatistic;
 
 import java.util.Calendar;
 
-public class PerHourClassifier extends Classifier<String> {
+public class PerHourGrooper extends Grooper<String> {
 
   @Override
   public Result<String> process(long date) {

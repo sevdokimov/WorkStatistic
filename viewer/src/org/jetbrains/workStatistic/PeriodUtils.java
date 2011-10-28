@@ -46,7 +46,7 @@ public class PeriodUtils {
     Map<String, List<Period>> res = new LinkedHashMap<String, List<Period>>();
 
     for (Period p : data) {
-      Classifier.Result<String> result = PerDayClassifier.INSTANCE.process(p.getStart());
+      Grooper.Result<String> result = PerDayGrooper.INSTANCE.process(p.getStart());
 
       List<Period> list = res.get(result.id);
       if (list == null) {
@@ -60,7 +60,7 @@ public class PeriodUtils {
     return res;
   }
   
-  public static <T extends Comparable<T>> Map<T, Long> sumByClassifier(List<Period> data, Classifier<T> classifier) {
+  public static <T extends Comparable<T>> Map<T, Long> sumByClassifier(List<Period> data, Grooper<T> grooper) {
     Map<T, Long> res = new HashMap<T, Long>();
 
     long totalSum = 0;
@@ -71,10 +71,10 @@ public class PeriodUtils {
       long x = p.getStart();
 
       while (x < p.getEnd()) {
-        Classifier.Result<T> result = classifier.process(x);
+        Grooper.Result<T> result = grooper.process(x);
         assert result.next > x;
-        assert !result.id.equals(classifier.process(result.next));
-        assert result.id.equals(classifier.process(result.next - 1).id);
+        assert !result.id.equals(grooper.process(result.next));
+        assert result.id.equals(grooper.process(result.next - 1).id);
 
         inc(res, result.id, Math.min(p.getEnd(), result.next) - x);
 
@@ -91,13 +91,13 @@ public class PeriodUtils {
     return res;
   }
 
-  public static <T extends Comparable<T>> long getAgv(List<Period> data, Classifier<T> classifier) {
-    Map<T, Long> map = sumByClassifier(data, classifier);
+  public static <T extends Comparable<T>> long getAgv(List<Period> data, Grooper<T> grooper) {
+    Map<T, Long> map = sumByClassifier(data, grooper);
     return sum(data) / map.size();
   }
 
-  public static <T extends Comparable<T>> void printStatistic(List<Period> data, Classifier<T> classifier) {
-    Map<T, Long> map = sumByClassifier(data, classifier);
+  public static <T extends Comparable<T>> void printStatistic(List<Period> data, Grooper<T> grooper) {
+    Map<T, Long> map = sumByClassifier(data, grooper);
 
     Object[] keys = map.keySet().toArray(new Object[map.keySet().size()]);
 

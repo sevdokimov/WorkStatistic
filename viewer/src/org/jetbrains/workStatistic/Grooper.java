@@ -1,6 +1,6 @@
 package org.jetbrains.workStatistic;
 
-public abstract class Classifier<T extends Comparable<T>> {
+public abstract class Grooper<T extends Comparable<T>> {
 
   public abstract Result<T> process(long date);
 

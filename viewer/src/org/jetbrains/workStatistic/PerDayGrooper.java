@@ -5,9 +5,9 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class PerDayClassifier extends Classifier<String> {
+public class PerDayGrooper extends Grooper<String> {
 
-  public static final PerDayClassifier INSTANCE = new PerDayClassifier();
+  public static final PerDayGrooper INSTANCE = new PerDayGrooper();
 
   private static final DateFormat FORMAT = new SimpleDateFormat("yyyy.MM.dd (EEE)");
 

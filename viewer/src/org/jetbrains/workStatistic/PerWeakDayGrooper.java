@@ -5,7 +5,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.Date;
 
-public class PerWeakDayClassifier extends Classifier<String> {
+public class PerWeakDayGrooper extends Grooper<String> {
 
   private static final DateFormat FORMAT = new SimpleDateFormat("EEE");
 
