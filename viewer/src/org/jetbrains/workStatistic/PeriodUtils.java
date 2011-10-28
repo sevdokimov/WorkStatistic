@@ -1,8 +1,13 @@
 package org.jetbrains.workStatistic;
 
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class PeriodUtils {
+
+  private static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH-mm-ss");
+  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
 
   public static void sortAndRemoveDuplicates(List<Period> data, int t) {
     if (data.size() <= 1) return;
@@ -151,7 +156,53 @@ public class PeriodUtils {
 
   public static int getWeakNumber(long date) {
     Calendar c = GregorianCalendar.getInstance();
-    c.setTime(new Date(date));
+    c.setTimeInMillis(date);
     return c.get(Calendar.WEEK_OF_YEAR);
+  }
+
+  public static void printStatistic(List<Period> workPeriods, List<Period> openedIdeaPeriods) {
+    Map<String, List<Period>> workMap = splitByDay(workPeriods);
+    Map<String, List<Period>> openMap = splitByDay(openedIdeaPeriods);
+
+    assert workMap.keySet().equals(openMap.keySet());
+
+    int weakNumber = -1;
+
+    long totalWorkTime = 0;
+    long totalOpenIdeaTime = 0;
+    double totalEff = 0;
+
+    for (String day : workMap.keySet()) {
+      long work = sum(workMap.get(day));
+
+      totalWorkTime += work;
+
+      List<Period> openList = openMap.get(day);
+
+      long open = sum(openList);
+      totalOpenIdeaTime += open;
+
+      int cw = getWeakNumber(openList.get(0).getStart());
+      if (weakNumber != -1 && cw != weakNumber) {
+        System.out.println();
+      }
+      weakNumber = cw;
+
+      System.out.append(day).append("   ")
+          .append(toTime(work))
+          .append(", ")
+          .append(toTime(open));
+
+      double efficiency = (double) work / open;
+      totalEff += efficiency;
+
+      System.out.printf(", %.2f, ", efficiency);
+
+      System.out.printf(" (%s - %s)\n", TIME_FORMAT.format(openList.get(0).getStart()), TIME_FORMAT.format(openList.get(openList.size() - 1).getEnd()));
+    }
+
+    int count = workMap.size();
+
+    System.out.printf("\nTotal: %s, %s, %.2f\n", toTime(totalWorkTime / count), toTime(totalOpenIdeaTime / count), (totalEff / count));
   }
 }

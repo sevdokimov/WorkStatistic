@@ -23,9 +23,6 @@ public class Main {
 
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
-  private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
-  private static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH-mm-ss");
-
   private void loadSingleFile(File file) throws IOException, ParseException {
     Date openTime = null;
 
@@ -98,35 +95,7 @@ public class Main {
   }
 
   private void printStat() {
-    Map<String, List<Period>> workMap = splitByDay(workPeriods);
-    Map<String, List<Period>> openMap = splitByDay(openedIdeaPeriods);
-    
-    assert workMap.keySet().equals(openMap.keySet());
-
-    int weakNumber = -1;
-
-    for (String day : workMap.keySet()) {
-      long work = sum(workMap.get(day));
-      
-      List<Period> openList = openMap.get(day);
-      
-      long open = sum(openList);
-
-      int cw = getWeakNumber(openList.get(0).getStart());
-      if (weakNumber != -1 && cw != weakNumber) {
-        System.out.println();
-      }
-      weakNumber = cw;
-
-      System.out.append(day).append("   ")
-          .append(toTime(work))
-          .append(", ")
-          .append(toTime(open));
-
-      System.out.printf(", %.2f, ", (double) work / open);
-
-      System.out.printf(" (%s - %s)\n", TIME_FORMAT.format(openList.get(0).getStart()), TIME_FORMAT.format(openList.get(openList.size() - 1).getEnd()));
-    }
+    printStatistic(workPeriods, openedIdeaPeriods);
   }
   
   public static void main(String[] args) throws IOException, ParseException {
@@ -142,10 +111,9 @@ public class Main {
 
     Main main = new Main();
     main.load(dir);
-
-    printStatistic(main.workPeriods, new PerDayClassifier());
-
     main.printStat();
+    
+    printStatistic(main.workPeriods, new PerWeakDayClassifier());
   }
 
 }
