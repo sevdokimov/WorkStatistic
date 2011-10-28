@@ -17,93 +17,96 @@ import static org.jetbrains.workStatistic.PeriodUtils.*;
  */
 public class Main {
 
-  private final List<Period> data = new ArrayList<Period>();
+  private final List<Period> workPeriods = new ArrayList<Period>();
   
-  private final List<Period> ideaOpens = new ArrayList<Period>();
+  private final List<Period> openedIdeaPeriods = new ArrayList<Period>();
 
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
   private static final DateFormat DATE_FORMAT = new SimpleDateFormat("yyyy.MM.dd");
   private static final DateFormat TIME_FORMAT = new SimpleDateFormat("HH-mm-ss");
 
+  private void loadSingleFile(File file) throws IOException, ParseException {
+    Date openTime = null;
+
+    Scanner sc = new Scanner(file);
+    try {
+      while (sc.hasNextLine()) {
+        String s = sc.nextLine();
+        Matcher matcher = PATTERN.matcher(s);
+
+        if (!matcher.matches()) {
+          throw new RuntimeException(s);
+        }
+
+        String sDuration = matcher.group(4);
+        if (sDuration != null) {
+          assert openTime != null;
+
+          NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
+
+          Period p = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
+          workPeriods.add(p);
+        }
+        else if (matcher.group(2) != null) {
+          assert openTime == null;
+          openTime = Period.FORMAT.parse(matcher.group(1));
+        }
+        else {
+          assert matcher.group(3) != null;
+          assert openTime != null;
+
+          long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
+          openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+          openTime = null;
+        }
+      }
+      if (openTime != null) {
+        if (workPeriods.size() > 0) {
+          long closeTime = workPeriods.get(workPeriods.size() - 1).getEnd();
+          if (closeTime > openTime.getTime()) {
+            openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+          }
+        }
+      }
+    }
+    finally {
+      sc.close();
+    }
+  }
+
   private void load(File dir) throws IOException, ParseException {
     for (File file : dir.listFiles()) {
       if (!file.isFile() || !file.getName().endsWith(".log")) continue;
-
-      Date openTime = null;
-      
-      Scanner sc = new Scanner(file);
-      try {
-        while (sc.hasNextLine()) {
-          String s = sc.nextLine();
-          Matcher matcher = PATTERN.matcher(s);
-
-          if (!matcher.matches()) {
-            throw new RuntimeException(s);
-          }
-
-          String sDuration = matcher.group(4);
-          if (sDuration != null) {
-            assert openTime != null;
-            
-            NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
-
-            Period p = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
-            data.add(p);
-          }
-          else if (matcher.group(2) != null) {
-            assert openTime == null;
-            openTime = Period.FORMAT.parse(matcher.group(1));
-          }
-          else {
-            assert matcher.group(3) != null;
-            assert openTime != null;
-            
-            long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
-            ideaOpens.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
-            openTime = null;
-          }
-        }
-        if (openTime != null) {
-          if (data.size() > 0) {
-            long closeTime = data.get(data.size() - 1).getEnd();
-            if (closeTime > openTime.getTime()) {
-              ideaOpens.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
-            }
-          }
-        }
-      }
-      finally {
-        sc.close();
-      }
+      loadSingleFile(file);
     }
 
-    sortAndRemoveDuplicates(data, 60000);
-    sortAndRemoveDuplicates(ideaOpens, 1);
+    sortAndRemoveDuplicates(workPeriods, 60000);
+    sortAndRemoveDuplicates(openedIdeaPeriods, 1);
   }
 
 
   private void printLines() {
-    for (int i = 0; i < data.size(); i++) {
-      Period period = data.get(i);
+    for (int i = 0; i < workPeriods.size(); i++) {
+      Period period = workPeriods.get(i);
       
       System.out.println(Period.FORMAT.format(new Date(period.getStart())) + " + " + toTime(period.getDuration()) );
-      if (i + 1 < data.size()) {
-        System.out.println(Period.FORMAT.format(new Date(period.getEnd())) + " - " + toTime(data.get(i + 1).getStart() - period.getEnd()));
+      if (i + 1 < workPeriods.size()) {
+        System.out.println(Period.FORMAT.format(new Date(period.getEnd())) + " - " + toTime(workPeriods.get(i + 1).getStart() - period.getEnd()));
       }
     }
   }
 
   private void printStat() {
-    Map<String, List<Period>> dataMap = splitByDay(data);
-    Map<String, List<Period>> openMap = splitByDay(ideaOpens);
+    Map<String, List<Period>> workMap = splitByDay(workPeriods);
+    Map<String, List<Period>> openMap = splitByDay(openedIdeaPeriods);
     
-    assert dataMap.keySet().equals(openMap.keySet());
+    assert workMap.keySet().equals(openMap.keySet());
 
     int weakNumber = -1;
 
-    for (String day : dataMap.keySet()) {
-      long work = sum(dataMap.get(day));
+    for (String day : workMap.keySet()) {
+      long work = sum(workMap.get(day));
       
       List<Period> openList = openMap.get(day);
       
@@ -140,7 +143,7 @@ public class Main {
     Main main = new Main();
     main.load(dir);
 
-    printStatistic(main.data, new PerDayClassifier());
+    printStatistic(main.workPeriods, new PerDayClassifier());
 
     main.printStat();
   }
