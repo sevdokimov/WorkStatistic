@@ -13,6 +13,7 @@ public class Period implements Comparable<Period> {
   private long duration;
 
   public Period(long start, long duration) {
+    assert duration >= 0;
     this.start = start;
     this.duration = duration;
   }

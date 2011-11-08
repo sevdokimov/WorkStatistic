@@ -25,7 +25,8 @@ public class Main {
 
   private void loadSingleFile(File file) throws IOException, ParseException {
     Date openTime = null;
-
+    Period lastPeriod = null;
+    
     Scanner sc = new Scanner(file);
     try {
       while (sc.hasNextLine()) {
@@ -42,8 +43,8 @@ public class Main {
 
           NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
 
-          Period p = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
-          workPeriods.add(p);
+          lastPeriod = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
+          workPeriods.add(lastPeriod);
         }
         else if (matcher.group(2) != null) {
           assert openTime == null;
@@ -55,15 +56,24 @@ public class Main {
 
           long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
           openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+          assert openedIdeaPeriods.get(openedIdeaPeriods.size() - 1).getDuration() < 20*60*60 * 1000;
           openTime = null;
         }
       }
       if (openTime != null) {
         if (workPeriods.size() > 0) {
-          long closeTime = workPeriods.get(workPeriods.size() - 1).getEnd();
-          if (closeTime > openTime.getTime()) {
-            openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+          long closeTime;
+          if (lastPeriod == null) {
+            closeTime = openTime.getTime();
           }
+          else {
+            closeTime = lastPeriod.getEnd();
+          }
+
+          assert closeTime >= openTime.getTime();
+
+          openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
+          assert openedIdeaPeriods.get(openedIdeaPeriods.size() - 1).getDuration() < 20*60*60 * 1000;
         }
       }
     }

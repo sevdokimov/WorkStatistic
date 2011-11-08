@@ -173,11 +173,17 @@ public class PeriodUtils {
     }
   }
 
+  public static String getIntersection(Set<String> set1, Set<String> set2) {
+    Set<String> res = new HashSet<String>(set1);
+    res.removeAll(set2);
+    return res.toString();
+  }
+  
   public static void printStatistic(List<Period> workPeriods, List<Period> openedIdeaPeriods) {
     Map<String, List<Period>> workMap = splitByGrooper(PerDayGrooper.INSTANCE, workPeriods);
     Map<String, List<Period>> openMap = splitByGrooper(PerDayGrooper.INSTANCE, openedIdeaPeriods);
 
-    assert workMap.keySet().equals(openMap.keySet());
+    assert workMap.keySet().equals(openMap.keySet()) : getIntersection(workMap.keySet(), openMap.keySet());
 
     int weakNumber = -1;
 
