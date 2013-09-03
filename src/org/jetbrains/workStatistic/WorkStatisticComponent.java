@@ -19,6 +19,7 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.HashSet;
 
 import static java.awt.AWTEvent.*;
 
@@ -125,6 +126,9 @@ public class WorkStatisticComponent implements ApplicationComponent {
     write(FORMAT.format(new Date()) + " Startup");
 
     timer = new Timer(1000, new ActionListener() {
+
+      private final HashSet<Toolkit> toolkitsWithListener = new HashSet<Toolkit>();
+
       public void actionPerformed(ActionEvent e) {
         if (isClosed) return;
 
@@ -133,7 +137,7 @@ public class WorkStatisticComponent implements ApplicationComponent {
         for (final Window window : Window.getWindows()) {
           Toolkit toolkit = window.getToolkit();
 
-          if (!Arrays.asList(toolkit.getAWTEventListeners()).contains(listener)) {
+          if (toolkitsWithListener.add(toolkit)) {
             toolkit.addAWTEventListener(listener, MOUSE_EVENT_MASK | MOUSE_MOTION_EVENT_MASK | MOUSE_WHEEL_EVENT_MASK | KEY_EVENT_MASK);
           }
         }
