@@ -24,12 +24,17 @@ public class Main {
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
   private void loadSingleFile(File file) throws IOException, ParseException {
+    //System.out.println("reading: " + file);
     Date openTime = null;
     Period lastPeriod = null;
-    
+
+    int lineNumber = 0;
+
     Scanner sc = new Scanner(file);
     try {
       while (sc.hasNextLine()) {
+        lineNumber++;
+
         String s = sc.nextLine();
         Matcher matcher = PATTERN.matcher(s);
 
@@ -39,7 +44,7 @@ public class Main {
 
         String sDuration = matcher.group(4);
         if (sDuration != null) {
-          assert openTime != null;
+          assert openTime != null : "Line: " + lineNumber;
 
           NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
 
@@ -47,12 +52,12 @@ public class Main {
           workPeriods.add(lastPeriod);
         }
         else if (matcher.group(2) != null) {
-          assert openTime == null;
+          assert openTime == null : "Line: " + lineNumber;
           openTime = Period.FORMAT.parse(matcher.group(1));
         }
         else {
-          assert matcher.group(3) != null;
-          assert openTime != null;
+          assert matcher.group(3) != null : "Line: " + lineNumber;
+          assert openTime != null : "Line: " + lineNumber;
 
           long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
           openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
@@ -70,7 +75,7 @@ public class Main {
             closeTime = lastPeriod.getEnd();
           }
 
-          assert closeTime >= openTime.getTime();
+          assert closeTime >= openTime.getTime() : "Line: " + lineNumber;
 
           openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
           assert openedIdeaPeriods.get(openedIdeaPeriods.size() - 1).getDuration() < 20*60*60 * 1000;
@@ -83,10 +88,13 @@ public class Main {
   }
 
   private void load(File dir) throws IOException, ParseException {
+    //System.out.println("Reading data...");
     for (File file : dir.listFiles()) {
       if (!file.isFile() || !file.getName().endsWith(".log")) continue;
       loadSingleFile(file);
     }
+
+    //System.out.println("Sorting...");
 
     sortAndRemoveDuplicates(workPeriods, 60000);
     sortAndRemoveDuplicates(openedIdeaPeriods, 1);
