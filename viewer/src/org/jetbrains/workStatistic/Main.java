@@ -2,10 +2,8 @@ package org.jetbrains.workStatistic;
 
 import java.io.File;
 import java.io.IOException;
-import java.text.DateFormat;
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -19,13 +17,10 @@ public class Main {
 
   private final List<Period> workPeriods = new ArrayList<Period>();
   
-  private final List<Period> openedIdeaPeriods = new ArrayList<Period>();
-
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
   private void loadSingleFile(File file) throws IOException, ParseException {
     System.out.println("reading: " + file);
-    Date openTime = null;
     Period lastPeriod = null;
 
     int lineNumber = 0;
@@ -44,41 +39,16 @@ public class Main {
 
         String sDuration = matcher.group(4);
         if (sDuration != null) {
-          assert openTime != null : "Line: " + lineNumber;
-
           NumberFormat instance = NumberFormat.getInstance(Locale.ENGLISH);
 
           lastPeriod = new Period(Period.FORMAT.parse(matcher.group(1)).getTime(), (long)(instance.parse(sDuration).doubleValue() * 1000));
           workPeriods.add(lastPeriod);
         }
         else if (matcher.group(2) != null) {
-          assert openTime == null : "Line: " + lineNumber;
-          openTime = Period.FORMAT.parse(matcher.group(1));
+          // IDEA was open
         }
         else {
-          assert matcher.group(3) != null : "Line: " + lineNumber;
-          assert openTime != null : "Line: " + lineNumber;
-
-          long closeTime = Period.FORMAT.parse(matcher.group(1)).getTime();
-          openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
-          assert openedIdeaPeriods.get(openedIdeaPeriods.size() - 1).getDuration() < 20*60*60 * 1000;
-          openTime = null;
-        }
-      }
-      if (openTime != null) {
-        if (workPeriods.size() > 0) {
-          long closeTime;
-          if (lastPeriod == null) {
-            closeTime = openTime.getTime();
-          }
-          else {
-            closeTime = lastPeriod.getEnd();
-          }
-
-          assert closeTime >= openTime.getTime() : "Line: " + lineNumber;
-
-          openedIdeaPeriods.add(new Period(openTime.getTime(), closeTime - openTime.getTime()));
-          assert openedIdeaPeriods.get(openedIdeaPeriods.size() - 1).getDuration() < 20*60*60 * 1000;
+          // IDEA was closed
         }
       }
     }
@@ -100,7 +70,6 @@ public class Main {
     System.out.println("Sorting...");
 
     sortAndRemoveDuplicates(workPeriods, 60000);
-    sortAndRemoveDuplicates(openedIdeaPeriods, 1);
   }
 
 
@@ -116,7 +85,7 @@ public class Main {
   }
 
   private void printStat() {
-    printStatistic(workPeriods, openedIdeaPeriods);
+    printStatistic(workPeriods);
   }
   
   public static void main(String[] args) throws IOException, ParseException {

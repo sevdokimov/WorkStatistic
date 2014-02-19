@@ -18,6 +18,10 @@ public class Period implements Comparable<Period> {
     this.duration = duration;
   }
 
+  public Period(Period period) {
+    this(period.start, period.duration);
+  }
+
   public long getStart() {
     return start;
   }
@@ -42,6 +46,11 @@ public class Period implements Comparable<Period> {
 
   public void setEnd(long endTime) {
     setDuration(endTime - start);
+  }
+
+  public static Period create(long start, long end) {
+    assert start <= end;
+    return new Period(start, end - start);
   }
 
   @Override

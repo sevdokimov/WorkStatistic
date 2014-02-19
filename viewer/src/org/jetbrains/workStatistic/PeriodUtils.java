@@ -179,6 +179,10 @@ public class PeriodUtils {
     return res.toString();
   }
   
+  public static void printStatistic(List<Period> workPeriods) {
+    printStatistic(workPeriods, getOpenIdePeriods(workPeriods));
+  }
+
   public static void printStatistic(List<Period> workPeriods, List<Period> openedIdeaPeriods) {
     Map<String, List<Period>> workMap = splitByGrooper(PerDayGrooper.INSTANCE, workPeriods);
     Map<String, List<Period>> openMap = splitByGrooper(PerDayGrooper.INSTANCE, openedIdeaPeriods);
@@ -223,5 +227,38 @@ public class PeriodUtils {
     int count = workMap.size();
 
     System.out.printf("\nTotal: %s, %s, %.2f\n", toTime(totalWorkTime / count), toTime(totalOpenIdeaTime / count), (totalEff / count));
+  }
+
+  public static List<Period> getOpenIdePeriods(List<Period> workPeriods) {
+    if (workPeriods.isEmpty()) return Collections.emptyList();
+
+    Calendar c = Calendar.getInstance();
+
+    List<Period> res = new ArrayList<Period>();
+
+    Iterator<Period> itr = workPeriods.iterator();
+
+    Period lastOpenDayPeriod = new Period(itr.next());
+    res.add(lastOpenDayPeriod);
+
+    c.setTimeInMillis(lastOpenDayPeriod.getStart());
+    int currentDay = c.get(Calendar.DAY_OF_YEAR);
+
+    while (itr.hasNext()) {
+      Period period = itr.next();
+
+      c.setTimeInMillis(period.getStart());
+
+      if (c.get(Calendar.DAY_OF_YEAR) != currentDay) {
+        lastOpenDayPeriod = new Period(period);
+        res.add(lastOpenDayPeriod);
+        currentDay = c.get(Calendar.DAY_OF_YEAR);
+      }
+      else {
+        lastOpenDayPeriod.setEnd(period.getEnd());
+      }
+    }
+
+    return res;
   }
 }
