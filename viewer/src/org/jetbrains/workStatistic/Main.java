@@ -84,6 +84,60 @@ public class Main {
     }
   }
 
+  private void trimBefore(int year) {
+    trimBefore(year, 0);
+  }
+
+  private void trimBefore(int year, int month) {
+    trimBefore(year, month, 1);
+  }
+
+  private void trimBefore(int year, int month, int day) {
+    Calendar c = Calendar.getInstance();
+    c.set(year, month, day);
+
+    long cutTime = c.getTimeInMillis();
+
+    int i;
+    for (i = 0; i < workPeriods.size(); i++) {
+      if (workPeriods.get(i).getEnd() > cutTime) {
+        break;
+      }
+    }
+
+    List<Period> periods = new ArrayList<Period>(workPeriods.subList(i, workPeriods.size()));
+
+    workPeriods.clear();
+    workPeriods.addAll(periods);
+  }
+
+  private void trimAfter(int year) {
+    trimAfter(year, 0);
+  }
+
+  private void trimAfter(int year, int month) {
+    trimAfter(year, month, 1);
+  }
+
+  private void trimAfter(int year, int month, int day) {
+    Calendar c = Calendar.getInstance();
+    c.set(year, month, day);
+
+    long cutTime = c.getTimeInMillis();
+
+    int i;
+    for (i = 0; i < workPeriods.size(); i++) {
+      if (workPeriods.get(i).getStart() >= cutTime) {
+        break;
+      }
+    }
+
+    List<Period> periods = new ArrayList<Period>(workPeriods.subList(0, i));
+
+    workPeriods.clear();
+    workPeriods.addAll(periods);
+  }
+
   private void printStat() {
     printStatistic(workPeriods);
   }
