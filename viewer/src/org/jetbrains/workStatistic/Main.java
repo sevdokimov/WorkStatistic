@@ -24,7 +24,7 @@ public class Main {
   private static final Pattern PATTERN = Pattern.compile("(\\S+ \\S+) (?:(Startup)|(Shutdown)|(?:work (\\d+\\.\\d+)))");
 
   private void loadSingleFile(File file) throws IOException, ParseException {
-    //System.out.println("reading: " + file);
+    System.out.println("reading: " + file);
     Date openTime = null;
     Period lastPeriod = null;
 
@@ -88,13 +88,16 @@ public class Main {
   }
 
   private void load(File dir) throws IOException, ParseException {
-    //System.out.println("Reading data...");
-    for (File file : dir.listFiles()) {
+    System.out.println("Reading data...");
+    File[] files = dir.listFiles();
+    Arrays.sort(files);
+
+    for (File file : files) {
       if (!file.isFile() || !file.getName().endsWith(".log")) continue;
       loadSingleFile(file);
     }
 
-    //System.out.println("Sorting...");
+    System.out.println("Sorting...");
 
     sortAndRemoveDuplicates(workPeriods, 60000);
     sortAndRemoveDuplicates(openedIdeaPeriods, 1);
